@@ -8,9 +8,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Converse with AI',
+  title: 'Talk to an AI today, with Agora Conversational AI Engine!',
   description:
-    "A conversational AI web-app powered by Agora's Conversational AI Engine, built with next.js.",
+    "A voice first AI web-app powered by Agora's Conversational AI Engine. The easiest way to add voice to your LLM, without deploying new infrastructure.",
   icons: {
     icon: [
       { url: '/favicon.ico' },
