@@ -120,7 +120,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-black text-white relative overflow-hidden">
       <div className="flex-1 flex flex-col items-center justify-center">
-        <ParticleBackground />
+        <ParticleBackground isVisible={!showConversation} />
         <div className="z-10 text-center">
           <h1 className="text-4xl font-bold mb-6"><img
             src={showConversation ? "/talk-to-me-heading.svg" : "/ready-to-talk-heading.svg"}

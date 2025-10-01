@@ -168,13 +168,15 @@ export default function ConvoTextStream({
 
   return (
     <div id="chatbox" className={cn(
-      "fixed left-4 md:left-8 z-50",
-      isOpen ? "bottom-32 md:bottom-24" : "bottom-6 md:bottom-8"
+      "fixed z-50",
+      isOpen
+        ? "left-4 right-4 bottom-32 md:left-8 md:right-auto md:bottom-24"
+        : "left-4 md:left-8 bottom-6 md:bottom-8"
     )}>
       {isOpen ? (
         <div
           className={cn(
-            'shadow-lg w-96 flex flex-col chatbox',
+            'shadow-lg w-full max-w-96 mx-auto flex flex-col chatbox md:mx-0',
             isChatExpanded && 'expanded'
           )}
           style={{ backgroundColor: '#171717', borderRadius: '15px' }}
