@@ -118,9 +118,17 @@ export function MicrophoneButton({
   return (
     <button
       onClick={toggleMicrophone}
-      className={`relative w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-        isEnabled ? 'bg-white hover:bg-gray-50' : 'bg-red-500 hover:bg-red-600'
-      }`}
+      className="relative w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-colors"
+      style={{
+        backgroundColor: 'transparent',
+        border: `2px solid ${isEnabled ? '#A0FAFF' : '#DE344A'}`,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = isEnabled ? '#A0FAFF10' : '#DE344A10';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
     >
       <div className="absolute inset-0 flex items-center justify-center gap-1">
         {audioData.map((bar, index) => (
@@ -129,7 +137,7 @@ export function MicrophoneButton({
             className="w-1 rounded-full transition-all duration-100"
             style={{
               height: `${bar.height}%`,
-              backgroundColor: isEnabled ? '#22c55e' : '#94a3b8',
+              backgroundColor: isEnabled ? '#A0FAFF' : '#DE344A',
               transform: `scaleY(${Math.max(0.1, bar.height / 100)})`,
               transformOrigin: 'center',
             }}
@@ -139,9 +147,9 @@ export function MicrophoneButton({
 
       <div className={`relative z-10`}>
         {isEnabled ? (
-          <Mic size={24} className="text-gray-800" />
+          <Mic size={24} style={{ color: '#A0FAFF' }} />
         ) : (
-          <MicOff size={24} className="text-white" />
+          <MicOff size={24} style={{ color: '#DE344A' }} />
         )}
       </div>
     </button>

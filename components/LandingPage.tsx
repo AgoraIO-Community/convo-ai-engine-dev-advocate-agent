@@ -118,48 +118,75 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white relative overflow-hidden">
-      <ParticleBackground />
-      <div className="z-10 text-center">
-        <h1 className="text-4xl font-bold mb-6">Converse</h1>
-        <p className="text-lg mb-6">
-          When was the last time you had an intelligent conversation?
-        </p>
-        {!showConversation ? (
-          <>
-            <button
-              onClick={handleStartConversation}
-              disabled={isLoading}
-              className="px-8 py-3 bg-blue-600/80 text-white rounded-full border border-blue-400/30 backdrop-blur-sm 
-              hover:bg-blue-700/90 transition-all shadow-lg hover:shadow-blue-500/20 
-              disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium"
-            >
-              {isLoading ? 'Starting...' : 'Start Conversation'}
-            </button>
-            {error && <p className="mt-4 text-red-400">{error}</p>}
-          </>
-        ) : agoraData ? (
-          <>
-            {agentJoinError && (
-              <div className="mb-4 p-3 bg-red-600/20 rounded-lg text-red-400">
-                Failed to connect with AI agent. The conversation may not work
-                as expected.
-              </div>
-            )}
-            <Suspense fallback={<div>Loading conversation...</div>}>
-              <AgoraProvider>
-                <ConversationComponent
-                  agoraData={agoraData}
-                  onTokenWillExpire={handleTokenWillExpire}
-                  onEndConversation={() => setShowConversation(false)}
-                />
-              </AgoraProvider>
-            </Suspense>
-          </>
-        ) : (
-          <p>Failed to load conversation data.</p>
-        )}
+    <div className="min-h-screen flex flex-col bg-black text-white relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <ParticleBackground isVisible={!showConversation} />
+        <div className="z-10 text-center">
+          <h1 className="text-4xl font-bold mb-6"><img
+            src={showConversation ? "/talk-to-me-heading.svg" : "/ready-to-talk-heading.svg"}
+            alt={showConversation ? "Talk to Me" : "Ready to Talk"}
+            className="mb-6 max-w-sm sm:max-w-md mx-auto w-full px-4"
+          /></h1>
+          {!showConversation && (
+            <p className="text-lg mb-14">
+              Experience the power of <br className="sm:hidden" />Agora's Conversational AI Engine.
+            </p>
+          )}
+          {!showConversation ? (
+            <>
+              <button
+                onClick={handleStartConversation}
+                disabled={isLoading}
+                className="px-8 py-3 bg-black text-white font-bold rounded-full border-2 border-[#00c2ff] backdrop-blur-sm
+                hover:bg-[#00c2ff]/10 transition-all shadow-lg hover:shadow-[#00c2ff]/20
+                disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              >
+                {isLoading ? 'Starting...' : 'Try it now!'}
+              </button>
+              {error && <p className="mt-4 text-destructive">{error}</p>}
+            </>
+          ) : agoraData ? (
+            <>
+              {agentJoinError && (
+                <div className="mb-4 p-3 bg-destructive/20 rounded-lg text-destructive">
+                  Failed to connect with AI agent. The conversation may not work
+                  as expected.
+                </div>
+              )}
+              <Suspense fallback={<div>Loading conversation...</div>}>
+                <AgoraProvider>
+                  <ConversationComponent
+                    agoraData={agoraData}
+                    onTokenWillExpire={handleTokenWillExpire}
+                    onEndConversation={() => setShowConversation(false)}
+                  />
+                </AgoraProvider>
+              </Suspense>
+            </>
+          ) : (
+            <p>Failed to load conversation data.</p>
+          )}
+        </div>
       </div>
+      <footer className="py-8 pr-6">
+        <div className="flex items-center justify-end space-x-2 text-gray-400">
+          <span className="text-sm font-light uppercase">Powered by</span>
+          <a
+            href="https://agora.io/en/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-cyan-300 transition-colors"
+            aria-label="Visit Agora's website"
+          >
+            <img
+              src="/agora-logo-rgb-blue.svg"
+              alt="Agora"
+              className="h-6 w-auto hover:opacity-80 transition-opacity translate-y-1"
+            />
+            <span className="sr-only">Agora</span>
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

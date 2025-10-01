@@ -9,7 +9,7 @@ import {
   ChevronsDownUp,
   ArrowDownFromLine,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, renderMarkdownToHtml } from '@/lib/utils';
 import { IMessageListItem, EMessageStatus } from '@/lib/message';
 
 interface ConvoTextStreamProps {
@@ -167,13 +167,19 @@ export default function ConvoTextStream({
   }
 
   return (
-    <div id="chatbox" className="fixed bottom-24 right-8 z-50">
+    <div id="chatbox" className={cn(
+      "fixed z-50",
+      isOpen
+        ? "left-4 right-4 bottom-32 md:left-8 md:right-auto md:bottom-24"
+        : "left-4 md:left-8 bottom-6 md:bottom-8"
+    )}>
       {isOpen ? (
         <div
           className={cn(
-            'bg-white rounded-lg shadow-lg w-96 flex flex-col text-black chatbox',
+            'shadow-lg w-full max-w-96 mx-auto flex flex-col chatbox md:mx-0',
             isChatExpanded && 'expanded'
           )}
+          style={{ backgroundColor: '#171717', borderRadius: '15px' }}
         >
           <div className="p-2 border-b flex justify-between items-center shrink-0">
             <Button variant="ghost" size="icon" onClick={toggleChatExpanded}>
@@ -183,7 +189,7 @@ export default function ConvoTextStream({
                 <UnfoldVertical className="h-4 w-4" />
               )}
             </Button>
-            <h3 className="font-semibold">Chat</h3>
+            <h3 className="font-semibold">Transcription</h3>
             <Button variant="ghost" size="icon" onClick={toggleChat}>
               <X className="h-4 w-4" />
             </Button>
@@ -206,12 +212,11 @@ export default function ConvoTextStream({
                 >
                   {/* Avatar */}
                   <div
-                    className={cn(
-                      'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium',
-                      isAIMessage(message)
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-blue-100 text-blue-700'
-                    )}
+                    className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
+                    style={{
+                      backgroundColor: isAIMessage(message) ? '#A0FAFF' : '#333333',
+                      color: isAIMessage(message) ? '#000000' : '#FFFFFF',
+                    }}
                   >
                     {isAIMessage(message) ? 'AI' : 'U'}
                   </div>
@@ -228,15 +233,20 @@ export default function ConvoTextStream({
                     <div
                       className={cn(
                         'rounded-[15px] px-3 py-2',
-                        isAIMessage(message)
-                          ? 'bg-gray-100 text-left'
-                          : 'bg-blue-500 text-white text-right',
+                        isAIMessage(message) ? 'text-left' : 'text-right',
                         message.status === EMessageStatus.IN_PROGRESS &&
                           'animate-pulse'
                       )}
-                    >
-                      {message.text}
-                    </div>
+                      style={{
+                        backgroundColor: isAIMessage(message)
+                          ? 'transparent'
+                          : '#333333',
+                        color: isAIMessage(message) ? '#A0FAFF' : '#FFFFFF',
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdownToHtml(message.text),
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -246,9 +256,21 @@ export default function ConvoTextStream({
       ) : (
         <Button
           onClick={toggleChat}
-          className="rounded-full w-12 h-12 flex items-center justify-center bg-white hover:invert hover:border-2 hover:border-black hover:scale-150 transition-all duration-300"
+          className="group rounded-full w-12 h-12 flex items-center justify-center border-2 hover:scale-110 transition-all duration-300 ease-in-out ml-2"
+          style={{
+            backgroundColor: '#333333',
+            borderColor: '#FFFFFF',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#FFFFFF';
+            e.currentTarget.style.borderColor = '#FFFFFF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#333333';
+            e.currentTarget.style.borderColor = '#FFFFFF';
+          }}
         >
-          <MessageCircle className="h-6 w-6 text-black" />
+          <MessageCircle className="h-6 w-6 text-white group-hover:text-black transition-colors duration-300 ease-in-out" />
         </Button>
       )}
     </div>

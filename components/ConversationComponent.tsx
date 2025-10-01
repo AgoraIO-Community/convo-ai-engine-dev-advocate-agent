@@ -16,7 +16,6 @@ import { MicrophoneButton } from './MicrophoneButton';
 import { AudioVisualizer } from './AudioVisualizer';
 import type {
   ConversationComponentProps,
-  StopConversationRequest,
   ClientStartRequest,
 } from '@/types/conversation';
 import ConvoTextStream from './ConvoTextStream';
@@ -285,33 +284,6 @@ export default function ConversationComponent({
     };
   }, [client]);
 
-  // Handle conversation actions
-  const handleStopConversation = async () => {
-    try {
-      const stopRequest: StopConversationRequest = {
-        agent_id: agoraData.agentId!,
-      };
-
-      const response = await fetch('/api/stop-conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stopRequest),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to stop conversation: ${response.statusText}`);
-      }
-
-      setIsAgentConnected(false);
-      if (onEndConversation) {
-        onEndConversation();
-      }
-    } catch (error) {
-      console.error('Error stopping conversation:', error);
-    }
-  };
 
   const handleStartConversation = async () => {
     if (!agoraData.agentId) return;
@@ -405,39 +377,19 @@ export default function ConversationComponent({
 
   return (
     <div className="flex flex-col gap-6 p-4 h-full">
-      {/* Connection Status - Updated to show connecting state */}
+      {/* Connection Status - Always show End Conversation button */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        {isAgentConnected ? (
-          <button
-            onClick={handleStopConversation}
-            disabled={isConnecting}
-            className="px-4 py-2 bg-red-500/80 text-white rounded-full border border-red-400/30 backdrop-blur-sm 
-            hover:bg-red-600/90 transition-all shadow-lg hover:shadow-red-500/20 
-            disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-          >
-            {isConnecting ? 'Disconnecting...' : 'Stop Agent'}
-          </button>
-        ) : (
-          remoteUsers.length === 0 && (
-            <button
-              onClick={handleStartConversation}
-              disabled={isConnecting}
-              className="px-4 py-2 bg-blue-500/80 text-white rounded-full border border-blue-400/30 backdrop-blur-sm 
-              hover:bg-blue-600/90 transition-all shadow-lg hover:shadow-blue-500/20 
-              disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-            >
-              {isConnecting ? 'Connecting with agent...' : 'Connect Agent'}
-            </button>
-          )
-        )}
+        <button
+          onClick={onEndConversation}
+          className="px-4 py-2 bg-transparent text-red-500 rounded-full border border-red-500 backdrop-blur-sm
+          hover:bg-red-500/10 transition-all shadow-lg hover:shadow-red-500/20 text-sm font-medium"
+        >
+          End Conversation
+        </button>
         <div
           className={`w-3 h-3 rounded-full ${
             isConnected ? 'bg-green-500' : 'bg-red-500'
           }`}
-          onClick={onEndConversation}
-          role="button"
-          title="End conversation"
-          style={{ cursor: 'pointer' }}
         />
       </div>
 
@@ -458,7 +410,7 @@ export default function ConversationComponent({
       </div>
 
       {/* Local Controls - Fixed at bottom center */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+      <div className="fixed bottom-14 md:bottom-8 left-1/2 -translate-x-1/2">
         <MicrophoneButton
           isEnabled={isEnabled}
           setIsEnabled={setIsEnabled}

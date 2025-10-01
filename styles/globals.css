@@ -2,8 +2,135 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Jokker Font Family */
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Thin.woff2') format('woff2'),
+       url('/font/Jokker-Thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-ThinItalic.woff2') format('woff2'),
+       url('/font/Jokker-ThinItalic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Light.woff2') format('woff2'),
+       url('/font/Jokker-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-LightItalic.woff2') format('woff2'),
+       url('/font/Jokker-LightItalic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Regular.woff2') format('woff2'),
+       url('/font/Jokker-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-RegularItalic.woff2') format('woff2'),
+       url('/font/Jokker-RegularItalic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Medium.woff2') format('woff2'),
+       url('/font/Jokker-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-MediumItalic.woff2') format('woff2'),
+       url('/font/Jokker-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Semibold.woff2') format('woff2'),
+       url('/font/Jokker-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-SemiboldItalic.woff2') format('woff2'),
+       url('/font/Jokker-SemiboldItalic.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Bold.woff2') format('woff2'),
+       url('/font/Jokker-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-BoldItalic.woff2') format('woff2'),
+       url('/font/Jokker-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-Heavy.woff2') format('woff2'),
+       url('/font/Jokker-Heavy.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jokker';
+  src: url('/font/Jokker-HeavyItalic.woff2') format('woff2'),
+       url('/font/Jokker-HeavyItalic.woff') format('woff');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Jokker', Arial, Helvetica, sans-serif;
 }
 
 @layer utilities {
@@ -28,7 +155,7 @@ body {
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 352 72% 54%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
@@ -63,7 +190,7 @@ body {
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 352 72% 54%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;

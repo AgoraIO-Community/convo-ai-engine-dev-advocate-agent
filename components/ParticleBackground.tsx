@@ -5,7 +5,11 @@ import Particles from 'react-particles'
 import type { Engine } from 'tsparticles-engine'
 import { loadSlim } from 'tsparticles-slim'
 
-export default function ParticleBackground() {
+interface ParticleBackgroundProps {
+  isVisible?: boolean;
+}
+
+export default function ParticleBackground({ isVisible = true }: ParticleBackgroundProps) {
   const particlesInit = useCallback(async (engine: Engine) => {
     await loadSlim(engine)
   }, [])
@@ -83,7 +87,9 @@ export default function ParticleBackground() {
         },
         detectRetina: true,
       }}
-      className="absolute inset-0"
+      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+        isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
     />
   )
 }

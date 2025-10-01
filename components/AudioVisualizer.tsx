@@ -110,14 +110,14 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ track }) => {
             ref={(el) => {
               barsRef.current[index] = el;
             }}
-            className="visualizer-bar w-3 bg-gradient-to-t from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-75"
+            className="visualizer-bar w-3 rounded-full transition-all duration-75"
             style={{
               height: '2px',
               transformOrigin: 'bottom',
               minHeight: '2px',
               display: 'block',
               position: 'relative',
-              background: 'linear-gradient(to top, #3b82f6, #8b5cf6, #ec4899)',
+              background: 'linear-gradient(to top, #00C2FF, #FCF9F8, #C46FFB)',
               opacity: 1,
             }}
           />
