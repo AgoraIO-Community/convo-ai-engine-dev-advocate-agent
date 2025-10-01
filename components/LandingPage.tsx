@@ -138,7 +138,7 @@ export default function LandingPage() {
                 onClick={handleStartConversation}
                 disabled={isLoading}
                 className="px-8 py-3 bg-black text-white font-bold rounded-full border-2 border-[#00c2ff] backdrop-blur-sm
-                hover:bg-[#00c2ff]/10 transition-all shadow-lg hover:shadow-[#00c2ff]/20
+                hover:bg-[#00c2ff] hover:text-black transition-all duration-300 shadow-lg hover:shadow-[#00c2ff]/20
                 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
               >
                 {isLoading ? 'Starting...' : 'Try it now!'}

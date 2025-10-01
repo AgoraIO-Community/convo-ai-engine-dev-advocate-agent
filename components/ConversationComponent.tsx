@@ -382,7 +382,7 @@ export default function ConversationComponent({
         <button
           onClick={onEndConversation}
           className="px-4 py-2 bg-transparent text-red-500 rounded-full border border-red-500 backdrop-blur-sm
-          hover:bg-red-500/10 transition-all shadow-lg hover:shadow-red-500/20 text-sm font-medium"
+          hover:bg-red-500 hover:text-black transition-all duration-300 shadow-lg hover:shadow-red-500/20 text-sm font-medium"
         >
           End Conversation
         </button>

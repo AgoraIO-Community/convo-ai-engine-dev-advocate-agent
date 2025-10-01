@@ -118,13 +118,13 @@ export function MicrophoneButton({
   return (
     <button
       onClick={toggleMicrophone}
-      className="relative w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-colors"
+      className="group relative w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-all duration-300"
       style={{
         backgroundColor: 'transparent',
         border: `2px solid ${isEnabled ? '#A0FAFF' : '#DE344A'}`,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = isEnabled ? '#A0FAFF10' : '#DE344A10';
+        e.currentTarget.style.backgroundColor = isEnabled ? '#A0FAFF' : '#DE344A';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
@@ -134,7 +134,7 @@ export function MicrophoneButton({
         {audioData.map((bar, index) => (
           <div
             key={index}
-            className="w-1 rounded-full transition-all duration-100"
+            className="w-1 rounded-full transition-all duration-100 group-hover:!bg-black"
             style={{
               height: `${bar.height}%`,
               backgroundColor: isEnabled ? '#A0FAFF' : '#DE344A',
@@ -145,11 +145,11 @@ export function MicrophoneButton({
         ))}
       </div>
 
-      <div className={`relative z-10`}>
+      <div className={`relative z-10 group-hover:text-black transition-colors duration-300`}>
         {isEnabled ? (
-          <Mic size={24} style={{ color: '#A0FAFF' }} />
+          <Mic size={24} style={{ color: '#A0FAFF' }} className="group-hover:!text-black transition-colors duration-300" />
         ) : (
-          <MicOff size={24} style={{ color: '#DE344A' }} />
+          <MicOff size={24} style={{ color: '#DE344A' }} className="group-hover:!text-black transition-colors duration-300" />
         )}
       </div>
     </button>
