@@ -138,7 +138,7 @@ export default function LandingPage() {
                 onClick={handleStartConversation}
                 disabled={isLoading}
                 className="px-8 py-3 bg-black text-white font-bold rounded-full border-2 border-[#00c2ff] backdrop-blur-sm
-                hover:bg-[#00c2ff]/10 transition-all shadow-lg hover:shadow-[#00c2ff]/20
+                hover:bg-[#00c2ff] hover:text-black transition-all duration-300 shadow-lg hover:shadow-[#00c2ff]/20
                 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
               >
                 {isLoading ? 'Starting...' : 'Try it now!'}
@@ -168,8 +168,8 @@ export default function LandingPage() {
           )}
         </div>
       </div>
-      <footer className="py-8 pr-6">
-        <div className="flex items-center justify-end space-x-2 text-gray-400">
+      <footer className="py-8 pl-6">
+        <div className="flex items-center justify-start space-x-2 text-gray-400">
           <span className="text-sm font-light uppercase">Powered by</span>
           <a
             href="https://agora.io/en/"

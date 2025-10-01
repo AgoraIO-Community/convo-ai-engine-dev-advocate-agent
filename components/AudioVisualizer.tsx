@@ -117,7 +117,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ track }) => {
               minHeight: '2px',
               display: 'block',
               position: 'relative',
-              background: 'linear-gradient(to top, #00C2FF, #FCF9F8, #C46FFB)',
+              background: 'linear-gradient(to top, #A0FAFF, #FCF9F8, #C46FFB)', 
               opacity: 1,
             }}
           />
