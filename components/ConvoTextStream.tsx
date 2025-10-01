@@ -170,8 +170,8 @@ export default function ConvoTextStream({
     <div id="chatbox" className={cn(
       "fixed z-50",
       isOpen
-        ? "left-4 right-4 bottom-32 md:left-8 md:right-auto md:bottom-24"
-        : "left-4 md:left-8 bottom-6 md:bottom-8"
+        ? "left-4 right-4 bottom-32 md:left-auto md:right-8 md:bottom-24"
+        : "right-4 md:right-8 bottom-6 md:bottom-8"
     )}>
       {isOpen ? (
         <div
@@ -256,7 +256,7 @@ export default function ConvoTextStream({
       ) : (
         <Button
           onClick={toggleChat}
-          className="group rounded-full w-12 h-12 flex items-center justify-center border-2 hover:scale-110 transition-all duration-300 ease-in-out ml-2"
+          className="group rounded-full w-12 h-12 flex items-center justify-center border-2 hover:scale-110 transition-all duration-300 ease-in-out mr-2"
           style={{
             backgroundColor: '#333333',
             borderColor: '#FFFFFF',

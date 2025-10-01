@@ -168,8 +168,8 @@ export default function LandingPage() {
           )}
         </div>
       </div>
-      <footer className="py-8 pr-6">
-        <div className="flex items-center justify-end space-x-2 text-gray-400">
+      <footer className="py-8 pl-6">
+        <div className="flex items-center justify-start space-x-2 text-gray-400">
           <span className="text-sm font-light uppercase">Powered by</span>
           <a
             href="https://agora.io/en/"
