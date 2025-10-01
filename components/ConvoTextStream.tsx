@@ -9,7 +9,7 @@ import {
   ChevronsDownUp,
   ArrowDownFromLine,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, renderMarkdownToHtml } from '@/lib/utils';
 import { IMessageListItem, EMessageStatus } from '@/lib/message';
 
 interface ConvoTextStreamProps {
@@ -241,9 +241,10 @@ export default function ConvoTextStream({
                           : '#333333',
                         color: isAIMessage(message) ? '#A0FAFF' : '#FFFFFF',
                       }}
-                    >
-                      {message.text}
-                    </div>
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdownToHtml(message.text),
+                      }}
+                    />
                   </div>
                 </div>
               ))}

@@ -54,6 +54,11 @@ export interface AgoraStartRequest {
     asr: {
       language: string;
       task?: string;
+      vendor?: string;
+      params?: {
+        api_key?: string;
+        language_hints?: string[];
+      };
     };
     llm: {
       url?: string;
@@ -72,6 +77,7 @@ export interface AgoraStartRequest {
         max_tokens: number;
         temperature?: number;
         top_p?: number;
+        // tools?: Array<{ type: string }>;
       };
     };
     vad: {
