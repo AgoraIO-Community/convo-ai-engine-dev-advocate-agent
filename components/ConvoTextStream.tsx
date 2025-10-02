@@ -259,6 +259,7 @@ export default function ConvoTextStream({
                 e.currentTarget.style.backgroundColor = 'transparent';
                 e.currentTarget.style.color = '#FFFFFF';
               }}
+              onClick={() => window.open('https://sso2.agora.io/en/v6/signup', '_blank')}
             >
               Start Building
             </Button>
