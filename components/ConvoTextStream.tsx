@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn, renderMarkdownToHtml } from '@/lib/utils';
 import { IMessageListItem, EMessageStatus } from '@/lib/message';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ConvoTextStreamProps {
   messageList: IMessageListItem[];
@@ -20,8 +21,10 @@ export default function ConvoTextStream({
   currentInProgressMessage = null,
   agentUID,
 }: ConvoTextStreamProps) {
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const prevMessageLengthRef = useRef(messageList.length);
@@ -80,22 +83,26 @@ export default function ConvoTextStream({
     return hasSignificantChange;
   };
 
-  // Effect for auto-opening chat when first streaming message arrives
+  // Effect for auto-opening chat when first streaming message arrives (desktop only)
   useEffect(() => {
     // Check if this is the first message and chat should be opened
     const hasNewMessage = messageList.length > 0;
     const hasInProgressMessage =
       shouldShowStreamingMessage() && currentInProgressMessage !== null;
 
+    // Desktop: auto-open on first message
+    // Mobile: keep closed but indicate new messages
     if (
       (hasNewMessage || hasInProgressMessage) &&
-      !hasSeenFirstMessageRef.current &&
-      !isOpen
+      !hasSeenFirstMessageRef.current
     ) {
-      setIsOpen(true);
+      if (!isMobile && !isOpen) {
+        setIsOpen(true);
+      }
+      setHasNewMessages(true);
       hasSeenFirstMessageRef.current = true;
     }
-  }, [messageList, currentInProgressMessage]);
+  }, [messageList, currentInProgressMessage, isMobile, isOpen]);
 
   useEffect(() => {
     // Auto-scroll in these cases:
@@ -141,6 +148,7 @@ export default function ConvoTextStream({
     // If opening the chat, consider it as having seen the first message
     if (!isOpen) {
       hasSeenFirstMessageRef.current = true;
+      setHasNewMessages(false); // Clear pulse indicator when opened
     }
   };
 
@@ -259,7 +267,10 @@ export default function ConvoTextStream({
       ) : (
         <Button
           onClick={toggleChat}
-          className="group rounded-full w-12 h-12 flex items-center justify-center border-2 hover:scale-110 transition-all duration-300 ease-in-out mr-2"
+          className={cn(
+            "group rounded-full w-12 h-12 flex items-center justify-center border-2 hover:scale-110 transition-all duration-300 ease-in-out mr-2",
+            hasNewMessages && "animate-chat-pulse"
+          )}
           style={{
             backgroundColor: '#333333',
             borderColor: '#FFFFFF',
