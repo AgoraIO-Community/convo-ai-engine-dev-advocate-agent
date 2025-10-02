@@ -5,9 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   MessageCircle,
   X,
-  UnfoldVertical,
-  ChevronsDownUp,
-  ArrowDownFromLine,
 } from 'lucide-react';
 import { cn, renderMarkdownToHtml } from '@/lib/utils';
 import { IMessageListItem, EMessageStatus } from '@/lib/message';
@@ -29,7 +26,6 @@ export default function ConvoTextStream({
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const prevMessageLengthRef = useRef(messageList.length);
   const prevMessageTextRef = useRef('');
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
   const hasSeenFirstMessageRef = useRef(false);
 
   // Debug log for message detection
@@ -148,10 +144,6 @@ export default function ConvoTextStream({
     }
   };
 
-  const toggleChatExpanded = () => {
-    setIsChatExpanded(!isChatExpanded);
-  };
-
   // Helper to determine if message is from AI
   const isAIMessage = (message: IMessageListItem) => {
     // The AI should be uid=0 (agent) OR matching the agentUID if provided
@@ -175,21 +167,11 @@ export default function ConvoTextStream({
     )}>
       {isOpen ? (
         <div
-          className={cn(
-            'shadow-lg w-full max-w-96 mx-auto flex flex-col chatbox md:mx-0',
-            isChatExpanded && 'expanded'
-          )}
+          className="shadow-lg w-full max-w-96 mx-auto flex flex-col chatbox expanded md:mx-0"
           style={{ backgroundColor: '#171717', borderRadius: '15px' }}
         >
-          <div className="p-2 border-b flex justify-between items-center shrink-0">
-            <Button variant="ghost" size="icon" onClick={toggleChatExpanded}>
-              {isChatExpanded ? (
-                <ArrowDownFromLine className="h-4 w-4" />
-              ) : (
-                <UnfoldVertical className="h-4 w-4" />
-              )}
-            </Button>
-            <h3 className="font-semibold">Transcription</h3>
+          <div className="p-2 flex justify-end items-center shrink-0">
+            <h3 className="font-semibold mr-auto ml-2">Transcription</h3>
             <Button variant="ghost" size="icon" onClick={toggleChat}>
               <X className="h-4 w-4" />
             </Button>
@@ -251,6 +233,27 @@ export default function ConvoTextStream({
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="p-4 pt-2 shrink-0 flex justify-center">
+            <Button
+              className="rounded-full px-6 py-2 font-medium hover:scale-105 transition-transform duration-200 border-2"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: '#A0FAFF',
+                color: '#FFFFFF',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#A0FAFF';
+                e.currentTarget.style.color = '#000000';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+            >
+              Start Building
+            </Button>
           </div>
         </div>
       ) : (
