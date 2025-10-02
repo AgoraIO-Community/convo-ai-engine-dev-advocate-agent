@@ -168,7 +168,7 @@ export default function LandingPage() {
           )}
         </div>
       </div>
-      <footer className="py-8 pl-6">
+      <footer className="fixed bottom-0 left-0 py-4 pl-4 md:py-6 md:pl-6 z-40">
         <div className="flex items-center justify-start space-x-2 text-gray-400">
           <span className="text-sm font-light uppercase">Powered by</span>
           <a

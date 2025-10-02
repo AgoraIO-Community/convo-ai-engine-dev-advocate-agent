@@ -27,6 +27,28 @@ body {
   height: 600px;
 }
 
+/* Mobile responsive heights */
+@media (max-height: 700px) {
+  .chatbox.expanded {
+    height: calc(100vh - 180px);
+    max-height: 500px;
+  }
+}
+
+@media (max-height: 600px) {
+  .chatbox.expanded {
+    height: calc(100vh - 160px);
+    max-height: 400px;
+  }
+}
+
+@media (max-height: 500px) {
+  .chatbox.expanded {
+    height: calc(100vh - 140px);
+    max-height: 350px;
+  }
+}
+
 /* Markdown formatting for chat messages */
 
 /* Bullet list items */
