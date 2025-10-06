@@ -13,6 +13,7 @@ import {
   UID,
 } from 'agora-rtc-react';
 import { MicrophoneButton } from './MicrophoneButton';
+import { MicrophoneSelector } from './MicrophoneSelector';
 import { AudioVisualizer } from './AudioVisualizer';
 import type {
   ConversationComponentProps,
@@ -410,12 +411,13 @@ export default function ConversationComponent({
       </div>
 
       {/* Local Controls - Fixed at bottom center */}
-      <div className="fixed bottom-14 md:bottom-8 left-1/2 -translate-x-1/2">
+      <div className="fixed bottom-14 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3">
         <MicrophoneButton
           isEnabled={isEnabled}
           setIsEnabled={setIsEnabled}
           localMicrophoneTrack={localMicrophoneTrack}
         />
+        <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
       </div>
 
       {/* Conversation Text Stream component */}
