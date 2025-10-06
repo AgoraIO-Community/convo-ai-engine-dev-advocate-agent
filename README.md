@@ -1,13 +1,24 @@
-# Conversational AI: Marketing Demo for Vapicon
+# Conversational AI: Dev Advocate Agent Demo
 
-A Next.js-based web-app for conversational AI agents, built with Agora's Real-Time Communication SDK.
+A feature-rich Next.js web application demonstrating real-time conversational AI capabilities using Agora's Real-Time Communication SDK. This demo showcases voice-first interactions with live transcriptions, multi-device audio input support, and an Agent ready to help you wiht your Agora build.
 
 <img src="./.github/assets/Conversation-Ai-Client.gif" alt="Conversational AI Client" />
 
+## Overview
+
+This application demonstrates how to build a production-ready conversational AI interface with:
+- **Real-time voice conversations** with AI agents powered by Agora's Conversational AI Engine
+- **Live text transcriptions** with streaming message updates and visual status indicators
+- **Advanced audio controls** including device selection and visual feedback
+- **Modern UX patterns** like smart auto-scrolling, mobile responsiveness, and accessibility features
+- **Flexible backend integration** supporting multiple LLM providers (OpenAI, Anthropic, etc.) and TTS services (Microsoft Azure, ElevenLabs)
+
 ## Guides and Documentation
 
-- [Guide.md](./DOCS/Guide.md) on how to build this application from scratch.
-- [User Interaction Diagram](./DOCS/User-Interaction-Diagram.md) for how the application interacts with the different services.
+- [Guide.md](./DOCS/GUIDE.md) - Complete step-by-step guide on how to build this application from scratch.
+- [User Interaction Diagram](./DOCS/User-Interaction-Diagram.md) - Visual diagram showing how the application interacts with different services.
+- [Text Streaming Guide](./DOCS/TEXT_STREAMING_GUIDE.md) - Deep dive into implementing real-time conversation transcriptions.
+- [Microphone Selector Implementation](./DOCS/MICROPHONE_SELECTOR_IMPLEMENTATION.md) - Guide for adding device selection functionality.
 
 ## Prerequisites
 
@@ -55,7 +66,7 @@ The following environment variables are required:
 ### LLM Configuration
 
 - `NEXT_LLM_URL` - LLM API endpoint URL
-- `NEXT_PUBLIC_LLM_TOKEN` - LLM API authentication token
+- `NEXT_LLM_TOKEN` - LLM API authentication token
 - `NEXT_LLM_MODEL` - LLM model to use (optional)
 
 ### TTS Configuration
@@ -108,12 +119,40 @@ This will:
    - Other variables have defaults if values are not provided
 4. Deploy the application automatically
 
+## Features
+
+### 🎙️ Audio Input Control
+- **Microphone Toggle**: Easy-to-use button to enable/disable your microphone
+- **Device Selection**: Choose from multiple microphone inputs with the microphone selector dropdown
+- **Hot-Swap Support**: Automatically detects when devices are plugged in/unplugged
+- **Audio Visualization**: Real-time visual feedback showing microphone input levels
+
+### 💬 Real-Time Text Streaming
+- **Live Transcriptions**: See what you say and the AI's responses in real-time as text
+- **Message Status Indicators**: Visual feedback for in-progress, completed, and interrupted messages
+- **Smart Auto-Scroll**: Automatically scrolls to new messages while preserving scroll position when reviewing history
+- **Mobile-Responsive Chat UI**: Collapsible chat window that adapts to different screen sizes
+- **Desktop Auto-Open**: Chat window automatically opens on first message (desktop only)
+- **Message Persistence**: Full conversation history maintained throughout the session
+
+### 🤖 AI Conversation Engine
+- **Custom LLM Integration**: Connect your preferred LLM (OpenAI, Anthropic, etc.)
+- **Multiple TTS Providers**: Support for Microsoft Azure TTS and ElevenLabs
+- **Voice Activity Detection**: Smart VAD settings for natural conversation flow
+- **Token Management**: Automatic token renewal to prevent disconnections
+- **Agent Control**: Start, stop, and restart AI agent during the conversation
+
+### 🎨 User Experience
+- **Audio Visualizations**: Animated frequency bars for both user and AI audio
+- **Connection Status**: Real-time connection indicators
+- **Error Handling**: Graceful error messages and recovery options
+- **Accessibility**: ARIA labels and keyboard-friendly controls
+
 ## Voice Options
 
 ### Microsoft TTS
 
 Male voices:
-
 - en-US-AndrewMultilingualNeural (default)
 - en-US-ChristopherNeural (casual, friendly)
 - en-US-GuyNeural (professional)
@@ -121,7 +160,6 @@ Male voices:
 - en-US-TonyNeural (enthusiastic)
 
 Female voices:
-
 - en-US-JennyNeural (assistant-like)
 - en-US-AriaNeural (professional)
 - en-US-EmmaNeural (friendly)
@@ -132,6 +170,25 @@ Try voices: https://speech.microsoft.com/portal/voicegallery
 ### ElevenLabs
 
 Try voices: https://elevenlabs.io/app/voice-lab
+
+## Key Components
+
+The application is built with a modular component architecture:
+
+### Core Components
+
+- **`LandingPage.tsx`**: Entry point that initializes the Agora client and manages the conversation lifecycle
+- **`ConversationComponent.tsx`**: Main conversation container handling RTC connections, agent management, and audio/text streaming
+- **`MicrophoneButton.tsx`**: Interactive button with built-in audio visualization for microphone control
+- **`MicrophoneSelector.tsx`**: Dropdown component for selecting audio input devices with hot-swap support
+- **`ConvoTextStream.tsx`**: Real-time text transcription display with smart scrolling and message management
+- **`AudioVisualizer.tsx`**: Visual feedback component showing audio frequency data for remote users
+
+### Utilities
+
+- **`lib/message.ts`**: MessageEngine for processing and managing conversation transcriptions
+- **`lib/utils.ts`**: Helper functions including markdown rendering for chat messages
+- **`types/conversation.ts`**: TypeScript type definitions for conversation data structures
 
 ## Contributing
 
@@ -176,3 +233,36 @@ The application provides the following API endpoints:
   agent_id: string;
 }
 ```
+
+## Technical Implementation Details
+
+### Text Streaming Architecture
+
+The text streaming feature uses Agora's MessageEngine to handle real-time transcriptions:
+
+1. **MessageEngine** (`lib/message.ts`) processes incoming stream messages from the Agora data channel
+2. **ConversationComponent** manages message state and updates, separating in-progress messages from completed ones
+3. **ConvoTextStream** renders the UI with smart scrolling and visual indicators for message status
+
+Message states include:
+- `IN_PROGRESS`: Currently being transcribed/streamed
+- `END`: Successfully completed message
+- `INTERRUPTED`: Message cut off by user or system
+
+### Microphone Device Management
+
+The MicrophoneSelector component provides:
+
+- **Device enumeration** via `AgoraRTC.getMicrophones()`
+- **Hot-swap detection** through `AgoraRTC.onMicrophoneChanged` callbacks
+- **Seamless switching** using `localMicrophoneTrack.setDevice(deviceId)`
+- **Automatic fallback** when the current device is disconnected
+
+### Audio Visualization
+
+Both the MicrophoneButton and AudioVisualizer components use the Web Audio API:
+
+- Creates an `AudioContext` and `AnalyserNode`
+- Connects to the Agora audio track's MediaStream
+- Uses `getByteFrequencyData()` to extract frequency information
+- Animates visual bars using `requestAnimationFrame` for smooth 60fps updates
