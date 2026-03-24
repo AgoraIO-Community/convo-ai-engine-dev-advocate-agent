@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RtcTokenBuilder, RtcRole } from 'agora-token';
 
-const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
-const APP_CERTIFICATE = process.env.NEXT_AGORA_APP_CERTIFICATE;
 const EXPIRATION_TIME_IN_SECONDS = 3600;
 
 function generateChannelName(): string {
-  // Generate a random string prefixed with timestamp to ensure uniqueness
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
   return `ai-conversation-${timestamp}-${random}`;
@@ -14,6 +11,9 @@ function generateChannelName(): string {
 
 export async function GET(request: NextRequest) {
   console.log('Generating Agora token...');
+
+  const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+  const APP_CERTIFICATE = process.env.NEXT_AGORA_APP_CERTIFICATE;
 
   if (!APP_ID || !APP_CERTIFICATE) {
     console.error('Agora credentials are not set');
@@ -25,16 +25,16 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const uidStr = searchParams.get('uid') || '0';
-  const uid = parseInt(uidStr);
-  // Use provided channel name or generate new one
+  const parsedUid = parseInt(uidStr, 10);
+  const uid = isNaN(parsedUid) ? 0 : parsedUid;
   const channelName = searchParams.get('channel') || generateChannelName();
 
   const expirationTime =
     Math.floor(Date.now() / 1000) + EXPIRATION_TIME_IN_SECONDS;
 
   try {
-    console.log('Building token with UID:', uid, 'Channel:', channelName);
-    const token = RtcTokenBuilder.buildTokenWithUid(
+    console.log('Building RTC+RTM token with UID:', uid, 'Channel:', channelName);
+    const token = RtcTokenBuilder.buildTokenWithRtm(
       APP_ID,
       APP_CERTIFICATE,
       channelName,
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       expirationTime
     );
 
-    console.log('Token generated successfully');
+    console.log('Token generated successfully (RTC + RTM)');
     return NextResponse.json({
       token,
       uid: uid.toString(),
@@ -53,7 +53,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error generating Agora token:', error);
     return NextResponse.json(
-      { error: 'Failed to generate Agora token', details: error },
+      {
+        error: 'Failed to generate Agora token',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

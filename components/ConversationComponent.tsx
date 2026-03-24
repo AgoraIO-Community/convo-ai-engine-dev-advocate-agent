@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { setParameter } from 'agora-rtc-sdk-ng/esm';
+import type { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
 import {
   useRTCClient,
   useLocalMicrophoneTrack,
@@ -12,28 +14,28 @@ import {
   RemoteUser,
   UID,
 } from 'agora-rtc-react';
-import { MicrophoneButton } from './MicrophoneButton';
-import { MicrophoneSelector } from './MicrophoneSelector';
-import { AudioVisualizer } from './AudioVisualizer';
-import type {
-  ConversationComponentProps,
-  ClientStartRequest,
-} from '@/types/conversation';
-import ConvoTextStream from './ConvoTextStream';
 import {
-  MessageEngine,
-  IMessageListItem,
-  EMessageStatus,
-  EMessageEngineMode,
-} from '@/lib/message';
-
-// Export EMessageStatus for use in other components
-export { EMessageStatus } from '@/lib/message';
-
-const MESSAGE_BUFFER: { [key: string]: string } = {};
+  AgoraVoiceAI,
+  AgoraVoiceAIEvents,
+  AgentState,
+  TurnStatus,
+  TranscriptHelperMode,
+  type TranscriptHelperItem,
+  type UserTranscription,
+  type AgentTranscription,
+} from 'agora-agent-client-toolkit';
+import {
+  AudioVisualizer,
+  ConvoTextStream,
+  transcriptToMessageList,
+} from 'agora-agent-uikit';
+import { MicButtonWithVisualizer } from 'agora-agent-uikit/rtc';
+import { MicrophoneSelector } from './MicrophoneSelector';
+import type { ConversationComponentProps } from '@/types/conversation';
 
 export default function ConversationComponent({
   agoraData,
+  rtmClient,
   onTokenWillExpire,
   onEndConversation,
 }: ConversationComponentProps) {
@@ -41,17 +43,52 @@ export default function ConversationComponent({
   const isConnected = useIsConnected();
   const remoteUsers = useRemoteUsers();
   const [isEnabled, setIsEnabled] = useState(true);
-  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isEnabled);
   const [isAgentConnected, setIsAgentConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const agentUID = process.env.NEXT_AGENT_UID;
+  const agentUID = process.env.NEXT_PUBLIC_AGENT_UID;
   const [joinedUID, setJoinedUID] = useState<UID>(0);
-  const [messageList, setMessageList] = useState<IMessageListItem[]>([]);
-  const [currentInProgressMessage, setCurrentInProgressMessage] =
-    useState<IMessageListItem | null>(null);
-  const messageEngineRef = useRef<MessageEngine | null>(null);
 
-  // Check if agent UID is properly set
+  // Transcript + agent state — managed with raw AgoraVoiceAI (see effect below).
+  const [rawTranscript, setRawTranscript] = useState<
+    TranscriptHelperItem<Partial<UserTranscription | AgentTranscription>>[]
+  >([]);
+  const [agentState, setAgentState] = useState<AgentState | null>(null);
+
+  // StrictMode guard: delay `useJoin`'s ready flag until after the fake-unmount
+  // cycle completes. React StrictMode fires cleanup synchronously before any
+  // setTimeout callback, so the first (fake) mount's timeout is always cancelled.
+  // Only the real second mount's timeout fires, meaning useJoin joins exactly once.
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const id = setTimeout(() => {
+      if (!cancelled) setIsReady(true);
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+      setIsReady(false);
+    };
+  }, []);
+
+  const { isConnected: joinSuccess } = useJoin(
+    {
+      appid: process.env.NEXT_PUBLIC_AGORA_APP_ID!,
+      channel: agoraData.channel,
+      token: agoraData.token,
+      uid: parseInt(agoraData.uid, 10) || 0,
+    },
+    isReady
+  );
+
+  // Create mic track only after the StrictMode fake-unmount cycle completes (isReady).
+  // Passing `true` here creates two tracks in StrictMode — the first publishes, then
+  // StrictMode cleanup closes it and the second takes over, causing a ~3s audio gap.
+  // isReady uses the same setTimeout(fn,0) pattern as useJoin: StrictMode cleanup fires
+  // synchronously before the timeout, so only the real second mount's timer fires.
+  // Do NOT pass `isEnabled` — that ties track lifetime to mute state and breaks the Web Audio
+  // graph inside MicButtonWithVisualizer. Mute uses track.setEnabled() only.
+  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isReady);
+
   useEffect(() => {
     if (!agentUID) {
       console.warn('NEXT_AGENT_UID environment variable is not set');
@@ -60,172 +97,19 @@ export default function ConversationComponent({
     }
   }, [agentUID]);
 
-  // Join the channel using the useJoin hook
-  const { isConnected: joinSuccess } = useJoin(
-    {
-      appid: process.env.NEXT_PUBLIC_AGORA_APP_ID!,
-      channel: agoraData.channel,
-      token: agoraData.token,
-      uid: parseInt(agoraData.uid),
-    },
-    true
-  );
-
-  // Initialize MessageEngine when client is ready and connected
+  // ENABLE_AUDIO_PTS is a module-level SDK parameter (not on the client instance).
+  // It must be set before publishing audio for transcript timing to be accurate.
   useEffect(() => {
-    // Only initialize when the client is connected
-    if (!client || !isConnected) return;
-
-    // First, clean up any existing instance
-    if (messageEngineRef.current) {
-      console.log('Cleaning up existing MessageEngine instance');
-      try {
-        messageEngineRef.current.teardownInterval();
-        messageEngineRef.current.cleanup();
-      } catch (err) {
-        console.error('Error cleaning up MessageEngine:', err);
-      }
-      messageEngineRef.current = null;
-    }
-
-    console.log('Creating new MessageEngine instance with connected client');
-
-    // Create message engine with TEXT mode for better compatibility
+    if (!client) return;
     try {
-      const messageEngine = new MessageEngine(
-        client,
-        EMessageEngineMode.TEXT, // Use TEXT mode for more reliable message handling
-        // Callback to handle message list updates
-        (updatedMessages: IMessageListItem[]) => {
-          console.log('MessageEngine update:', updatedMessages);
-
-          // Sort messages by turn_id to maintain order
-          const sortedMessages = [...updatedMessages].sort(
-            (a, b) => a.turn_id - b.turn_id
-          );
-
-          // Find the latest in-progress message
-          const inProgressMsg = sortedMessages.find(
-            (msg) => msg.status === EMessageStatus.IN_PROGRESS
-          );
-
-          // Debug UID issues
-          if (sortedMessages.length > 0) {
-            console.log(
-              'Message UIDs:',
-              sortedMessages.map((m) => m.uid)
-            );
-            console.log('Agent UID (for comparison):', agentUID);
-          }
-
-          // Update states
-          setMessageList(
-            sortedMessages.filter(
-              (msg) => msg.status !== EMessageStatus.IN_PROGRESS
-            )
-          );
-          setCurrentInProgressMessage(inProgressMsg || null);
-        }
-      );
-
-      messageEngineRef.current = messageEngine;
-
-      // Start the MessageEngine after client is connected
-      console.log('Starting MessageEngine...');
-      messageEngineRef.current.run({ legacyMode: false });
-      console.log('MessageEngine successfully initialized and running');
+      setParameter('ENABLE_AUDIO_PTS', true);
+      console.log('Enabled ENABLE_AUDIO_PTS for timing synchronization');
     } catch (error) {
-      console.error('Failed to initialize MessageEngine:', error);
+      console.warn('Could not set ENABLE_AUDIO_PTS:', error);
     }
+  }, [client]);
 
-    // Cleanup on state change
-    return () => {
-      if (messageEngineRef.current) {
-        console.log('Cleaning up MessageEngine on state change');
-        try {
-          messageEngineRef.current.teardownInterval();
-          messageEngineRef.current.cleanup();
-        } catch (err) {
-          console.error('Error cleaning up MessageEngine:', err);
-        }
-        messageEngineRef.current = null;
-      }
-    };
-  }, [client, agentUID, isConnected]); // Add isConnected dependency
-
-  // Add improved stream message handler
-  useClientEvent(client, 'stream-message', (uid, payload) => {
-    const uidStr = uid.toString();
-    const isAgentMessage = uidStr === '333'; // Use fixed value as this appears to be consistent
-
-    console.log(
-      `Received stream message from UID: ${uidStr}`,
-      isAgentMessage ? 'AGENT MESSAGE' : '',
-      `(Expected agent UID: ${agentUID})`,
-      `Payload size: ${payload.length}`
-    );
-
-    // Check if message engine is running and try to restart if needed
-    if (messageEngineRef.current) {
-      console.log('MessageEngine is initialized');
-
-      // If MessageEngine is not properly handling messages, force restart
-      // Use a flag to avoid multiple restarts
-      let needsRestart = false;
-
-      // Intercept console error messages about message service not running
-      const originalConsoleError = console.error;
-      console.error = function (...args) {
-        const errorMsg = args.join(' ');
-        if (errorMsg.includes('Message service is not running')) {
-          needsRestart = true;
-        }
-        originalConsoleError.apply(console, args);
-      };
-
-      // Try to use the message engine to handle the message
-      try {
-        if (isAgentMessage) {
-          messageEngineRef.current.handleStreamMessage(payload);
-          console.log('Processed agent message through MessageEngine');
-        }
-      } catch (error) {
-        console.error('Error processing stream message:', error);
-        needsRestart = true;
-      }
-
-      // Restore original console.error
-      console.error = originalConsoleError;
-
-      // If needed, restart the message engine after a short delay
-      if (needsRestart) {
-        setTimeout(() => {
-          console.log('Attempting to restart MessageEngine...');
-          try {
-            messageEngineRef.current?.run({ legacyMode: false });
-            console.log('MessageEngine restarted successfully');
-          } catch (error) {
-            console.error('Failed to restart MessageEngine:', error);
-          }
-        }, 50);
-      }
-    } else {
-      console.error('MessageEngine not initialized!');
-    }
-
-    // Check if this is likely the agent but UID doesn't match expected
-    if (isAgentMessage && uidStr !== agentUID) {
-      console.warn(
-        `Possible agent UID mismatch. Message from: ${uidStr}, Expected: ${agentUID}`
-      );
-      // Update environment config if needed
-      console.info(
-        `You may need to set NEXT_AGENT_UID=${uidStr} in your .env file`
-      );
-    }
-  });
-
-  // Update actualUID when join is successful
+  // Track the auto-assigned RTC UID for token renewal and agent invite.
   useEffect(() => {
     if (joinSuccess && client) {
       const uid = client.uid;
@@ -234,34 +118,105 @@ export default function ConversationComponent({
     }
   }, [joinSuccess, client]);
 
-  // Publish local microphone track
+  // Initialize AgoraVoiceAI once the channel is joined.
+  //
+  // Gating on `isReady && joinSuccess` is critical for StrictMode safety:
+  //   - `isReady` ensures we are past the initial fake-unmount cycle, so this
+  //     effect only runs on the real mount (not the discarded fake one).
+  //   - Once `isReady` is true, React does NOT double-invoke this effect for
+  //     subsequent state changes (`joinSuccess` becoming true). That means
+  //     AgoraVoiceAI.init() is called exactly once, avoiding the singleton
+  //     race condition that occurs when ConversationalAIProvider (React toolkit)
+  //     is double-mounted by StrictMode.
+  useEffect(() => {
+    if (!isReady || !joinSuccess) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const ai = await AgoraVoiceAI.init({
+          rtcEngine: client as unknown as IAgoraRTCClient,
+          rtmConfig: { rtmEngine: rtmClient },
+          renderMode: TranscriptHelperMode.TEXT,
+          enableLog: true,
+        });
+
+        if (cancelled) {
+          try {
+            if (AgoraVoiceAI.getInstance() === ai) {
+              ai.unsubscribe();
+              ai.destroy();
+            }
+          } catch {}
+          return;
+        }
+
+        ai.on(AgoraVoiceAIEvents.TRANSCRIPT_UPDATED, (t) => {
+          setRawTranscript([...t]);
+        });
+        ai.on(AgoraVoiceAIEvents.AGENT_STATE_CHANGED, (_, event) =>
+          setAgentState(event.state)
+        );
+        ai.subscribeMessage(agoraData.channel);
+        console.log('AgoraVoiceAI initialized and subscribed to channel');
+      } catch (error) {
+        if (!cancelled) {
+          console.error('[AgoraVoiceAI] init failed:', error);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        const ai = AgoraVoiceAI.getInstance();
+        if (ai) {
+          ai.unsubscribe();
+          ai.destroy();
+        }
+      } catch {}
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, joinSuccess]);
+
+  // useTranscript() returns uid="0" for local user speech — remap to actual RTC UID
+  // so ConvoTextStream renders user messages on the correct side.
+  const transcript = useMemo(() => {
+    const localUID = String(client.uid);
+    return rawTranscript.map((m) => (m.uid === '0' ? { ...m, uid: localUID } : m));
+  }, [rawTranscript, client.uid]);
+
+  // Completed (END + INTERRUPTED) messages shown as history.
+  // INTERRUPTED must be included — if the agent's first turn is cut off,
+  // messageList stays empty and ConvoTextStream never auto-opens.
+  const messageList = useMemo(
+    () =>
+      transcriptToMessageList(
+        transcript.filter((m) => m.status !== TurnStatus.IN_PROGRESS)
+      ),
+    [transcript]
+  );
+
+  const currentInProgressMessage = useMemo(() => {
+    const m = transcript.find((x) => x.status === TurnStatus.IN_PROGRESS);
+    return m ? transcriptToMessageList([m])[0] ?? null : null;
+  }, [transcript]);
+
+  // Publish local mic once the track exists; usePublish waits for RTC connection.
   usePublish([localMicrophoneTrack]);
 
-  // Ensure local track is enabled for testing
-  useEffect(() => {
-    if (localMicrophoneTrack) {
-      localMicrophoneTrack.setEnabled(true);
-    }
-  }, [localMicrophoneTrack]);
-
-  // Handle remote user events
   useClientEvent(client, 'user-joined', (user) => {
     console.log('Remote user joined:', user.uid);
-    if (user.uid.toString() === agentUID) {
-      setIsAgentConnected(true);
-      setIsConnecting(false);
-    }
+    if (user.uid.toString() === agentUID) setIsAgentConnected(true);
   });
 
   useClientEvent(client, 'user-left', (user) => {
     console.log('Remote user left:', user.uid);
-    if (user.uid.toString() === agentUID) {
-      setIsAgentConnected(false);
-      setIsConnecting(false);
-    }
+    if (user.uid.toString() === agentUID) setIsAgentConnected(false);
   });
 
-  // Sync isAgentConnected with remoteUsers
+  // Sync isAgentConnected with remoteUsers (covers cases where user-joined/left are missed)
   useEffect(() => {
     const isAgentInRemoteUsers = remoteUsers.some(
       (user) => user.uid.toString() === agentUID
@@ -269,132 +224,76 @@ export default function ConversationComponent({
     setIsAgentConnected(isAgentInRemoteUsers);
   }, [remoteUsers, agentUID]);
 
-  // Connection state changes
   useClientEvent(client, 'connection-state-change', (curState, prevState) => {
     console.log(`Connection state changed from ${prevState} to ${curState}`);
-
-    if (curState === 'DISCONNECTED') {
-      console.log('Attempting to reconnect...');
-    }
+    if (curState === 'DISCONNECTED') console.log('Attempting to reconnect...');
   });
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      client?.leave();
-    };
-  }, [client]);
-
-
-  const handleStartConversation = async () => {
-    if (!agoraData.agentId) return;
-    setIsConnecting(true);
-
+  /**
+   * Mute/unmute via track.setEnabled() only — usePublish owns publish state.
+   * If we also unpublish in the toggle, usePublish and the button fight each other
+   * and break the MicButtonWithVisualizer Web Audio graph.
+   */
+  const handleMicToggle = useCallback(async () => {
+    const next = !isEnabled;
+    const track = localMicrophoneTrack;
+    if (!track) {
+      setIsEnabled(next);
+      return;
+    }
     try {
-      const startRequest: ClientStartRequest = {
-        requester_id: joinedUID?.toString(),
-        channel_name: agoraData.channel,
-        input_modalities: ['text'],
-        output_modalities: ['text', 'audio'],
-      };
-
-      const response = await fetch('/api/invite-agent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(startRequest),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to start conversation: ${response.statusText}`);
-      }
-
-      // Update agent ID when new agent is connected
-      const data = await response.json();
-      if (data.agent_id) {
-        agoraData.agentId = data.agent_id;
-      }
+      await track.setEnabled(next);
+      setIsEnabled(next);
     } catch (error) {
-      if (error instanceof Error) {
-        console.warn('Error starting conversation:', error.message);
-      }
-      // Reset connecting state if there's an error
-      setIsConnecting(false);
+      console.error('Failed to toggle microphone:', error);
     }
-  };
+  }, [isEnabled, localMicrophoneTrack]);
 
-  // Toggle microphone functionality
-  const handleMicrophoneToggle = async (isOn: boolean) => {
-    setIsEnabled(isOn);
-
-    if (isOn && !isAgentConnected) {
-      // Start conversation when microphone is turned on
-      await handleStartConversation();
-    }
-  };
-
-  // Add token renewal handler
   const handleTokenWillExpire = useCallback(async () => {
     if (!onTokenWillExpire || !joinedUID) return;
     try {
       const newToken = await onTokenWillExpire(joinedUID.toString());
       await client?.renewToken(newToken);
-      console.log('Successfully renewed Agora token');
+      await rtmClient.renewToken(newToken);
+      console.log('Successfully renewed Agora RTC and RTM tokens');
     } catch (error) {
       console.error('Failed to renew Agora token:', error);
     }
-  }, [client, onTokenWillExpire, joinedUID]);
+  }, [client, onTokenWillExpire, joinedUID, rtmClient]);
 
-  // Add token observer
   useClientEvent(client, 'token-privilege-will-expire', handleTokenWillExpire);
 
-  // Debug remote users to ensure we have the right agent UID
+  // Debug: log remote UIDs vs NEXT_PUBLIC_AGENT_UID to catch mismatches
   useEffect(() => {
     if (remoteUsers.length > 0) {
-      console.log(
-        'Remote users detected:',
-        remoteUsers.map((u) => u.uid)
-      );
+      console.log('Remote users detected:', remoteUsers.map((u) => u.uid));
       console.log('Current NEXT_AGENT_UID:', agentUID);
 
-      // If we see UIDs that don't match our expected agent UID
       const potentialAgents = remoteUsers.map((u) => u.uid.toString());
       if (agentUID && !potentialAgents.includes(agentUID)) {
-        console.warn(
-          'Agent UID mismatch! Expected:',
-          agentUID,
-          'Available users:',
-          potentialAgents
-        );
-        console.info(
-          `Consider updating NEXT_AGENT_UID to one of: ${potentialAgents.join(
-            ', '
-          )}`
-        );
+        console.warn('Agent UID mismatch! Expected:', agentUID, 'Available users:', potentialAgents);
+        console.info(`Consider updating NEXT_AGENT_UID to one of: ${potentialAgents.join(', ')}`);
       }
     }
   }, [remoteUsers, agentUID]);
 
   return (
     <div className="flex flex-col gap-6 p-4 h-full">
-      {/* Connection Status - Always show End Conversation button */}
+      {/* Connection status + end call */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <button
           onClick={onEndConversation}
           className="px-4 py-2 bg-transparent text-red-500 rounded-full border border-red-500 backdrop-blur-sm
-          hover:bg-red-500 hover:text-black transition-all duration-300 shadow-lg hover:shadow-red-500/20 text-sm font-medium"
+          hover:bg-red-500/10 transition-all shadow-lg hover:shadow-red-500/20 text-sm font-medium"
         >
           End Conversation
         </button>
         <div
-          className={`w-3 h-3 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-red-500'
-          }`}
+          className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
         />
       </div>
 
-      {/* Remote Users Section - Moved to top */}
+      {/* Remote users (agent audio + RTC subscription) */}
       <div className="flex-1">
         {remoteUsers.map((user) => (
           <div key={user.uid}>
@@ -402,7 +301,6 @@ export default function ConversationComponent({
             <RemoteUser user={user} />
           </div>
         ))}
-
         {remoteUsers.length === 0 && (
           <div className="text-center text-gray-500 py-8">
             Waiting for AI agent to join...
@@ -410,22 +308,42 @@ export default function ConversationComponent({
         )}
       </div>
 
-      {/* Local Controls - Fixed at bottom center */}
+      {/* Agent state — shown below the visualizer once the agent joins */}
+      <div className="text-center text-gray-400 text-sm capitalize h-4">
+        {isAgentConnected && agentState ? agentState : null}
+      </div>
+
+      {/* Local controls */}
       <div className="fixed bottom-14 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3">
-        <MicrophoneButton
-          isEnabled={isEnabled}
-          setIsEnabled={setIsEnabled}
-          localMicrophoneTrack={localMicrophoneTrack}
-        />
+        <div className="conversation-mic-host flex items-center justify-center">
+          <MicButtonWithVisualizer
+            isEnabled={isEnabled}
+            setIsEnabled={setIsEnabled}
+            track={localMicrophoneTrack}
+            onToggle={handleMicToggle}
+            className="overflow-visible"
+          />
+        </div>
         <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
       </div>
 
-      {/* Conversation Text Stream component */}
       <ConvoTextStream
         messageList={messageList}
         currentInProgressMessage={currentInProgressMessage}
         agentUID={agentUID}
       />
+
+      {/* Agora signup CTA - positioned below chat panel */}
+      <div className="fixed right-4 md:right-6 bottom-4 md:bottom-6 z-50 pointer-events-none">
+        <a
+          href="https://console.agora.io/signup"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pointer-events-auto inline-flex items-center justify-center px-4 py-2 bg-black text-white font-bold rounded-full border-2 border-[#00c2ff] backdrop-blur-sm hover:bg-[#00c2ff] hover:text-black transition-all duration-300 shadow-lg hover:shadow-[#00c2ff]/20 text-sm"
+        >
+          Get Started with Agora
+        </a>
+      </div>
     </div>
   );
 }
