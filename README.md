@@ -154,7 +154,7 @@ The application is built with a modular component architecture:
   - `MicButtonWithVisualizer` (from `agora-agent-uikit/rtc`) — mic button with built-in Web Audio visualization
   - `transcriptToMessageList` — converts toolkit transcript items into UI-ready message objects
 - **`agora-agent-client-toolkit`**: `AgoraVoiceAI` class that subscribes to RTM transcript events and normalizes them into a simple message list
-- **`agora-agent-server-sdk`**: Server-side SDK used in API routes to start and stop the AI agent
+- **`agora-agents`**: Server-side SDK used in API routes to start and stop the AI agent
 
 ### Utilities
 

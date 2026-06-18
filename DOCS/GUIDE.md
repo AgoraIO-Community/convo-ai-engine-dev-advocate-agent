@@ -43,12 +43,12 @@ Next, install the required Agora dependencies:
 - [agora-rtc-react](https://www.npmjs.com/package/agora-rtc-react) — Agora's React SDK for real-time audio/video
 - [agora-rtm](https://www.npmjs.com/package/agora-rtm) — Agora's Real-Time Messaging SDK (used for transcripts)
 - [agora-token](https://www.npmjs.com/package/agora-token) — Agora's Token Builder (server-side)
-- [agora-agent-server-sdk](https://www.npmjs.com/package/agora-agent-server-sdk) — invites and manages the AI agent (server-side)
+- [agora-agents](https://www.npmjs.com/package/agora-agents) — invites and manages the AI agent (server-side)
 - [agora-agent-client-toolkit](https://www.npmjs.com/package/agora-agent-client-toolkit) — handles transcript events from the AI agent
 - [agora-agent-uikit](https://www.npmjs.com/package/agora-agent-uikit) — ready-made UI components for the conversation interface
 
 ```bash
-pnpm add agora-rtc-react agora-rtm agora-token agora-agent-server-sdk agora-agent-client-toolkit agora-agent-uikit
+pnpm add agora-rtc-react agora-rtm agora-token agora-agents agora-agent-client-toolkit agora-agent-uikit
 ```
 
 For UI components, we'll use shadcn/ui in this guide, but you can use any UI library of your choice or create custom components:
@@ -813,7 +813,7 @@ Now that we have the basic RTC functionality working, let's integrate Agora's Co
 
 ### Invite Agent Route
 
-The `agora-agent-server-sdk` simplifies agent creation by handling token generation and the Agora REST API internally. Create the route file at `app/api/invite-agent/route.ts`:
+The `agora-agents` simplifies agent creation by handling token generation and the Agora REST API internally. Create the route file at `app/api/invite-agent/route.ts`:
 
 ```bash
 mkdir app/api/invite-agent
@@ -832,7 +832,7 @@ import {
   OpenAI,
   ElevenLabsTTS,
   DeepgramSTT,
-} from 'agora-agent-server-sdk';
+} from 'agora-agents';
 import { ClientStartRequest, AgentResponse } from '@/types/conversation';
 
 // System prompt that defines the agent's personality and behavior
@@ -969,7 +969,7 @@ The SDK supports multiple STT, LLM, and TTS providers. This example uses Deepgra
 
 ### Stop Conversation Route
 
-After the agent joins the conversation, we need a way to remove them. The `stop-conversation` route uses the `agora-agent-server-sdk` to stop the agent.
+After the agent joins the conversation, we need a way to remove them. The `stop-conversation` route uses the `agora-agents` to stop the agent.
 
 Create a file at `app/api/stop-conversation/route.ts`:
 
@@ -982,7 +982,7 @@ Add the following code:
 
 ```typescript
 import { NextResponse } from 'next/server';
-import { AgoraClient, Area } from 'agora-agent-server-sdk';
+import { AgoraClient, Area } from 'agora-agents';
 import { StopConversationRequest } from '@/types/conversation';
 
 export async function POST(request: Request) {
@@ -1516,7 +1516,7 @@ NEXT_ELEVENLABS_API_KEY=
 
 ## Next Steps
 
-Congratulations! You've built a full real-time conversational AI app with Next.js and Agora. The architecture you've built — with the `agora-agent-server-sdk` on the server and the `agora-agent-client-toolkit` + `agora-agent-uikit` on the client — gives you a solid foundation to customize the agent's personality, swap LLM/TTS providers, and scale to production.
+Congratulations! You've built a full real-time conversational AI app with Next.js and Agora. The architecture you've built — with the `agora-agents` on the server and the `agora-agent-client-toolkit` + `agora-agent-uikit` on the client — gives you a solid foundation to customize the agent's personality, swap LLM/TTS providers, and scale to production.
 
 For more information about [Agora's Conversational AI Engine](https://www.agora.io/en/products/conversational-ai-engine/) check out the [official documentation](https://docs.agora.io/en/).
 

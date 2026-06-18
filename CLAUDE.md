@@ -75,7 +75,7 @@ Include `INTERRUPTED` turns in `messageList` (filter only `IN_PROGRESS`). If the
 | Transcripts | `agora-agent-client-toolkit-react` | `ConversationalAIProvider` + `useTranscript()`, `useAgentState()` |
 | Toolkit core | `agora-agent-client-toolkit` | `TurnStatus` enum, `TranscriptHelperItem` types |
 | UI components | `agora-agent-uikit` | `AudioVisualizer`, `ConvoTextStream`, `MicButtonWithVisualizer` |
-| Server SDK | `agora-agent-server-sdk` | Builder pattern — `AgoraClient` → `Agent` → `session.start()` |
+| Server SDK | `agora-agents` | Builder pattern — `AgoraClient` → `Agent` → `session.start()` |
 | Messaging | `agora-rtm` | RTM transport for transcripts |
 
 RTM token must be generated with `RtcTokenBuilder.buildTokenWithRtm` — a standard RTC-only token does not grant RTM access.

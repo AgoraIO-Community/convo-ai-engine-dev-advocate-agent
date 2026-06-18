@@ -7,7 +7,7 @@ import {
   OpenAI,
   ElevenLabsTTS,
   DeepgramSTT,
-} from 'agora-agent-server-sdk';
+} from 'agora-agents';
 import { ClientStartRequest, AgentResponse } from '@/types/conversation';
 
 // System prompt that defines the agent's personality and behavior.
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     });
 
     const agent = new Agent({
-      name: `conversation-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      client,
       instructions: ADA_PROMPT,
       greeting: GREETING,
       failureMessage: 'Please wait a moment.',
@@ -167,13 +167,14 @@ export async function POST(request: NextRequest) {
       .withTts(
         new ElevenLabsTTS({
           key: elevenLabsApiKey,
+          baseUrl: process.env.NEXT_ELEVENLABS_BASE_URL ?? 'wss://api.elevenlabs.io/v1',
           modelId: 'eleven_flash_v2_5',
           voiceId: ELEVENLABS_VOICE_ID,
         }),
       );
 
     // remoteUids restricts the agent to only process audio from this user
-    const session = agent.createSession(client, {
+    const session = agent.createSession({
       channel: channel_name,
       agentUid,
       remoteUids: [requester_id],
