@@ -8,7 +8,7 @@
 
 A Next.js 16 (App Router) quickstart that lets a browser user speak with an Agora Conversational AI agent. The browser joins an Agora RTC channel for audio; RTM carries real-time transcripts. A server-side call invites an Agora cloud agent into the same channel. The agent runs a full ASR → LLM → TTS pipeline and publishes audio back.
 
-**Stack:** Next.js 15, React 19, TypeScript, Tailwind, pnpm, `agora-rtc-react`, `agora-rtm`, `agora-token`, `agora-agent-client-toolkit`, `agora-agent-uikit`, `agora-agent-server-sdk`.
+**Stack:** Next.js 15, React 19, TypeScript, Tailwind, pnpm, `agora-rtc-react`, `agora-rtm`, `agora-token`, `agora-agent-client-toolkit`, `agora-agent-uikit`, `agora-agents`.
 
 ---
 
@@ -63,7 +63,7 @@ DOCS/
 
 | Package | Role |
 |---|---|
-| `agora-agent-server-sdk` | `AgoraClient`, `Agent`, `DeepgramSTT`, `OpenAI`, `ElevenLabsTTS` — builder pattern for starting/stopping agents |
+| `agora-agents` | `AgoraClient`, `Agent`, `DeepgramSTT`, `OpenAI`, `ElevenLabsTTS` — builder pattern for starting/stopping agents |
 | `agora-token` | `RtcTokenBuilder.buildTokenWithRtm` — generates RTC+RTM combined token |
 
 ---
@@ -100,7 +100,7 @@ Generates an Agora RTC+RTM combined token via `RtcTokenBuilder.buildTokenWithRtm
 
 ### `POST /api/invite-agent`
 
-Starts an Agora ConvoAI agent using `agora-agent-server-sdk`.
+Starts an Agora ConvoAI agent using `agora-agents`.
 
 **Input** (`ClientStartRequest`): `{ requester_id, channel_name, input_modalities?, output_modalities? }`
 
@@ -134,7 +134,7 @@ Do not use the deprecated `type: 'agora_vad'` flat structure.
 
 ### `POST /api/stop-conversation`
 
-Stops an agent. Input: `{ agent_id: string }`. Uses `agora-agent-server-sdk` internally.
+Stops an agent. Input: `{ agent_id: string }`. Uses `agora-agents` internally.
 
 ---
 
